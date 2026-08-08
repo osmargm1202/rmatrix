@@ -17,27 +17,32 @@
       packages = forAllSystems (system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
+          mkRmatrix = rustPlatform:
+            rustPlatform.buildRustPackage {
+              pname = "rmatrix";
+              version = "0.1.1";
+
+              src = self;
+
+              cargoLock = {
+                lockFile = ./Cargo.lock;
+              };
+
+              meta = {
+                description = "Digital rain for modern terminals";
+                homepage = "https://github.com/osmargm1202/rmatrix";
+                license = pkgs.lib.licenses.mit;
+                mainProgram = "rmatrix";
+                platforms = pkgs.lib.platforms.unix;
+              };
+            };
         in
         {
-          rmatrix = pkgs.rustPlatform.buildRustPackage {
-            pname = "rmatrix";
-            version = "0.1.0";
-
-            src = self;
-
-            cargoLock = {
-              lockFile = ./Cargo.lock;
-            };
-
-            meta = {
-              description = "Digital rain for modern terminals";
-              homepage = "https://github.com/Tripstack-Corp/rmatrix";
-              license = pkgs.lib.licenses.mit;
-              mainProgram = "rmatrix";
-              platforms = pkgs.lib.platforms.unix;
-            };
-          };
+          rmatrix = mkRmatrix pkgs.rustPlatform;
           default = self.packages.${system}.rmatrix;
+        }
+        // pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
+          rmatrixStatic = mkRmatrix pkgs.pkgsStatic.rustPlatform;
         });
 
       apps = forAllSystems (system: {
