@@ -97,7 +97,8 @@ impl Theme {
     #[must_use]
     pub fn color(&self, glow: f32, is_head: bool, hue_shift: f32) -> Rgb {
         let (bright, dim, head) = if self.rainbow {
-            let b = hsv_to_rgb(hue_shift.rem_euclid(1.0), 0.85, 1.0);
+            let (base_hue, saturation, value) = rgb_to_hsv(self.bright);
+            let b = hsv_to_rgb(base_hue + hue_shift.rem_euclid(1.0), saturation, value);
             (b, scale(b, 0.18), head_tint(b))
         } else {
             (self.bright, self.dim, self.head)
@@ -162,8 +163,37 @@ pub fn hsv_to_rgb(h: f32, s: f32, v: f32) -> Rgb {
         4 => (t, p, v),
         _ => (v, p, q),
     };
-    ((r * 255.0) as u8, (g * 255.0) as u8, (b * 255.0) as u8)
+    (
+        (r * 255.0).round() as u8,
+        (g * 255.0).round() as u8,
+        (b * 255.0).round() as u8,
+    )
 }
+
+fn rgb_to_hsv((r, g, b): Rgb) -> (f32, f32, f32) {
+    let r = f32::from(r) / 255.0;
+    let g = f32::from(g) / 255.0;
+    let b = f32::from(b) / 255.0;
+    let max = r.max(g).max(b);
+    let min = r.min(g).min(b);
+    let delta = max - min;
+
+    if delta <= f32::EPSILON {
+        return (0.0, 0.0, max);
+    }
+
+    let hue = if max == r {
+        (g - b) / delta
+    } else if max == g {
+        (b - r) / delta + 2.0
+    } else {
+        (r - g) / delta + 4.0
+    };
+
+    (hue.rem_euclid(6.0) / 6.0, delta / max, max)
+}
+
+const DARK_SKY_BLUE: Rgb = (11, 61, 92);
 
 /// A parsed base colour plus whether the user asked for rainbow mode.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -184,7 +214,8 @@ impl FromStr for BaseColor {
             "orange" => (255, 140, 30),
             "purple" => (170, 90, 255),
             "white" => (220, 220, 220),
-            "rainbow" => return Ok(BaseColor((0, 255, 65), true)),
+            "dark-sky-blue" => DARK_SKY_BLUE,
+            "rainbow" => return Ok(BaseColor(DARK_SKY_BLUE, true)),
             hex => {
                 let hex = hex.strip_prefix('#').unwrap_or(hex);
                 if hex.len() != 6 || !hex.chars().all(|c| c.is_ascii_hexdigit()) {
@@ -243,8 +274,12 @@ mod tests {
             Ok(BaseColor((0, 255, 65), false))
         );
         assert_eq!(
+            BaseColor::from_str("dark-sky-blue"),
+            Ok(BaseColor(DARK_SKY_BLUE, false))
+        );
+        assert_eq!(
             BaseColor::from_str("rainbow"),
-            Ok(BaseColor((0, 255, 65), true))
+            Ok(BaseColor(DARK_SKY_BLUE, true))
         );
     }
 
@@ -297,8 +332,9 @@ mod tests {
     }
 
     #[test]
-    fn rainbow_hue_rotates_and_wraps() {
-        let t = Theme::from_base((0, 255, 65), true);
+    fn rainbow_hue_rotates_from_its_base_colour() {
+        let t = Theme::from_base(DARK_SKY_BLUE, true);
+        assert_eq!(t.color(1.0, false, 0.0), DARK_SKY_BLUE);
         assert_ne!(t.color(1.0, false, 0.0), t.color(1.0, false, 0.33));
         // Negative and >1 shifts must wrap rather than saturate.
         assert_eq!(t.color(1.0, false, 0.25), t.color(1.0, false, 1.25));

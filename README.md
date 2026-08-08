@@ -46,26 +46,26 @@ cargo build --release && cp target/release/rmatrix ~/.local/bin/
 ```
 rmatrix [OPTIONS]
 
-  -C, --color <COLOR>      Colour name, #RRGGBB, or "rainbow"  [default: green]
+  -C, --color <COLOR>      Colour name, #RRGGBB, or "rainbow"  [default: rainbow]
   -c, --charset <SET>      classic | katakana | ascii | alnum | binary | hex |
                            greek | symbols | custom            [default: classic]
       --custom <GLYPHS>    Glyphs to use with `--charset custom`
   -S, --speed <MUL>        Overall speed multiplier            [default: 1]
   -d, --density <0..1>     Fraction of columns raining         [default: 0.55]
   -m, --mutate <RATE>      Glyph churn, screens/sec; 0 disables[default: 0.35]
-      --tail-min <ROWS>    Shortest trail                      [default: 6]
-      --tail-max <ROWS>    Longest trail                       [default: 26]
+      --tail-min <ROWS>    Shortest trail                      [default: 10]
+      --tail-max <ROWS>    Longest trail                       [default: 40]
       --fps <N>            Frame rate cap                      [default: 30]
       --levels <N>         Brightness steps; 0 = unquantised   [default: 24]
       --stats              Start with the stats overlay shown
-  -b, --bold               Bold glyphs
-  -s, --screensaver        Exit on any keypress
+  -b, --bold               Bold glyphs                         [enabled by default]
+  -s, --screensaver        Exit on any keypress                [enabled by default]
       --seed <N>           Replay a specific animation
       --color-depth <D>    auto | truecolor | 256 | 16         [default: auto]
 ```
 
 Keys while running: `q`/`Esc`/`Ctrl-C` quit, `space` pause, `1`–`9` speed,
-`r` rainbow, `c` cycle charset, `b` bold, `f` stats overlay.
+`r` toggles rainbow and dark-sky-blue, `c` cycle charset, `b` bold, `f` stats overlay.
 
 Some combinations worth knowing:
 

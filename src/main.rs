@@ -26,11 +26,11 @@ use std::time::{Duration, Instant};
     name = "rmatrix",
     version,
     about = "Digital rain for modern terminals",
-    after_help = "KEYS:\n  q, Esc, Ctrl-C  quit\n  space           pause\n  1-9             speed\n  r               toggle rainbow\n  c               cycle charset\n  b               toggle bold\n  f               toggle stats overlay"
+    after_help = "KEYS:\n  q, Esc, Ctrl-C  quit\n  space           pause\n  1-9             speed\n  r               toggle rainbow / dark-sky-blue\n  c               cycle charset\n  b               toggle bold\n  f               toggle stats overlay"
 )]
 struct Args {
     /// Colour name, #RRGGBB, or "rainbow"
-    #[arg(short = 'C', long, default_value = "green")]
+    #[arg(short = 'C', long, default_value = "rainbow")]
     color: String,
 
     /// Glyph set
@@ -64,11 +64,11 @@ struct Args {
     density: f32,
 
     /// Shortest trail, in rows
-    #[arg(long, default_value_t = 6.0)]
+    #[arg(long, default_value_t = 10.0)]
     tail_min: f32,
 
     /// Longest trail, in rows
-    #[arg(long, default_value_t = 26.0)]
+    #[arg(long, default_value_t = 40.0)]
     tail_max: f32,
 
     /// Glyph churn rate (screens per second); 0 disables
@@ -76,11 +76,11 @@ struct Args {
     mutate: f32,
 
     /// Bold glyphs
-    #[arg(short = 'b', long)]
+    #[arg(short = 'b', long, default_value_t = true)]
     bold: bool,
 
     /// Exit on any keypress
-    #[arg(short = 's', long)]
+    #[arg(short = 's', long, default_value_t = true)]
     screensaver: bool,
 
     /// Replay a specific animation
@@ -446,7 +446,13 @@ mod tests {
 
     #[test]
     fn defaults_are_valid() {
-        assert!(validate(&args()).is_ok());
+        let defaults = args();
+        assert_eq!(defaults.color, "rainbow");
+        assert_eq!((defaults.tail_min, defaults.tail_max), (10.0, 40.0));
+        assert!(defaults.bold && defaults.screensaver);
+        let settings = validate(&defaults).expect("defaults should validate");
+        assert!(settings.rainbow);
+        assert_eq!(settings.base, (11, 61, 92));
     }
 
     #[test]
@@ -482,10 +488,12 @@ mod tests {
     }
 
     #[test]
-    fn rainbow_sets_the_flag_not_a_literal_colour() {
+    fn rainbow_sets_the_flag_and_dark_sky_blue_base() {
         let mut a = args();
         a.color = "rainbow".into();
-        assert!(validate(&a).expect("valid").rainbow);
+        let settings = validate(&a).expect("valid");
+        assert!(settings.rainbow);
+        assert_eq!(settings.base, (11, 61, 92));
     }
 
     #[test]
